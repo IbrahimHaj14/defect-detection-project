@@ -1,0 +1,36 @@
+# datasets
+data/raw/
+data/processed/
+data/synthetic/
+
+# outputs
+outputs/checkpoints/
+outputs/figures/
+outputs/tables/
+
+# python
+__pycache__/
+*.pyc
+*.pyo
+
+# environments
+venv/
+.env/
+conda/
+
+# notebooks
+.ipynb_checkpoints/
+
+# model weights
+*.pth
+*.pt
+*.ckpt
+*.bin
+*.safetensors
+
+# vscode
+.vscode/
+
+# logs
+wandb/
+mlruns/
