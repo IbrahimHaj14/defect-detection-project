@@ -1,0 +1,6 @@
+outs:
+- md5: 661532802064e1b54c6ff183b292782a.dir
+  size: 6105308308
+  nfiles: 7532
+  hash: md5
+  path: ECF-Dataset
