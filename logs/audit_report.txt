@@ -1,0 +1,173 @@
+
+============================================================
+Dataset: __MACOSX
+  Total images: 2504
+  Non-ASCII paths: 0
+  Corrupted files: 2504
+  Zero-byte files: 0
+  Image sizes found: {}
+  Image modes found: {}
+  ⚠ ISSUES:
+    - Corrupted: data\raw\__MACOSX\SSGD\lb101\._062915-5849-786-3-102_ng_38.jpg — cannot identify image file 'data\\raw\\__MACOSX\\SSGD\\lb101\\._062915-5849-786-3-102_ng_38.jpg'
+    - Corrupted: data\raw\__MACOSX\SSGD\lb101\._062915-5850-004-1-101_ng_45.jpg — cannot identify image file 'data\\raw\\__MACOSX\\SSGD\\lb101\\._062915-5850-004-1-101_ng_45.jpg'
+    - Corrupted: data\raw\__MACOSX\SSGD\lb101\._062915-5857-712-4-102_ng_7.jpg — cannot identify image file 'data\\raw\\__MACOSX\\SSGD\\lb101\\._062915-5857-712-4-102_ng_7.jpg'
+    - Corrupted: data\raw\__MACOSX\SSGD\lb101\._062915-5857-921-2-101_ng_11.jpg — cannot identify image file 'data\\raw\\__MACOSX\\SSGD\\lb101\\._062915-5857-921-2-101_ng_11.jpg'
+    - Corrupted: data\raw\__MACOSX\SSGD\lb101\._062915-5910-741-5-102_ng_18.jpg — cannot identify image file 'data\\raw\\__MACOSX\\SSGD\\lb101\\._062915-5910-741-5-102_ng_18.jpg'
+    - Corrupted: data\raw\__MACOSX\SSGD\lb101\._062915-5910-847-3-101_ng_31.jpg — cannot identify image file 'data\\raw\\__MACOSX\\SSGD\\lb101\\._062915-5910-847-3-101_ng_31.jpg'
+    - Corrupted: data\raw\__MACOSX\SSGD\lb101\._062915-5918-952-1-102_ng_7.jpg — cannot identify image file 'data\\raw\\__MACOSX\\SSGD\\lb101\\._062915-5918-952-1-102_ng_7.jpg'
+    - Corrupted: data\raw\__MACOSX\SSGD\lb101\._062915-5919-295-4-101_ng_18.jpg — cannot identify image file 'data\\raw\\__MACOSX\\SSGD\\lb101\\._062915-5919-295-4-101_ng_18.jpg'
+    - Corrupted: data\raw\__MACOSX\SSGD\lb101\._062915-5927-072-2-102_ng_2.jpg — cannot identify image file 'data\\raw\\__MACOSX\\SSGD\\lb101\\._062915-5927-072-2-102_ng_2.jpg'
+    - Corrupted: data\raw\__MACOSX\SSGD\lb101\._062915-5927-266-5-101_ng_17.jpg — cannot identify image file 'data\\raw\\__MACOSX\\SSGD\\lb101\\._062915-5927-266-5-101_ng_17.jpg'
+
+============================================================
+Dataset: bottle
+  Total images: 355
+  Non-ASCII paths: 0
+  Corrupted files: 0
+  Zero-byte files: 0
+  Image sizes found: {'(900, 900)': 355}
+  Image modes found: {'L': 63, 'RGB': 292}
+
+============================================================
+Dataset: cable
+  Total images: 466
+  Non-ASCII paths: 0
+  Corrupted files: 0
+  Zero-byte files: 0
+  Image sizes found: {'(1024, 1024)': 466}
+  Image modes found: {'L': 92, 'RGB': 374}
+
+============================================================
+Dataset: capsule
+  Total images: 460
+  Non-ASCII paths: 0
+  Corrupted files: 0
+  Zero-byte files: 0
+  Image sizes found: {'(1000, 1000)': 460}
+  Image modes found: {'L': 109, 'RGB': 351}
+
+============================================================
+Dataset: carpet
+  Total images: 486
+  Non-ASCII paths: 0
+  Corrupted files: 0
+  Zero-byte files: 0
+  Image sizes found: {'(1024, 1024)': 486}
+  Image modes found: {'L': 89, 'RGB': 397}
+
+============================================================
+Dataset: ECF-Dataset
+  Total images: 4465
+  Non-ASCII paths: 0
+  Corrupted files: 0
+  Zero-byte files: 0
+  Image sizes found: {'(1919, 945)': 1, '(412, 552)': 818, '(396, 536)': 31, '(1919, 933)': 1, '(1920, 490)': 1, '(2048, 480)': 1416, '(1919, 487)': 1, '(1919, 934)': 1, '(2500, 2000)': 985, '(2400, 1900)': 7, '(1920, 682)': 1, '(1920, 668)': 1, '(1920, 674)': 1, '(1917, 694)': 1, '(1920, 713)': 1, '(1916, 642)': 1, '(1920, 672)': 1, '(1909, 662)': 1, '(1920, 705)': 1, '(1920, 667)': 1, '(3000, 1600)': 229, '(1919, 940)': 1, '(480, 628)': 131, '(1918, 680)': 1, '(1920, 640)': 1, '(1920, 656)': 1, '(1920, 706)': 1, '(1920, 665)': 1, '(1920, 657)': 1, '(1920, 678)': 1, '(2500, 1300)': 218, '(1885, 948)': 1, '(1919, 942)': 1, '(2200, 2448)': 57, '(2208, 2456)': 15, '(1761, 694)': 1, '(1760, 699)': 1, '(800, 696)': 220, '(1920, 784)': 4, '(1920, 795)': 1, '(1920, 771)': 1, '(1918, 773)': 1, '(1920, 773)': 1, '(1915, 780)': 1, '(1920, 802)': 1, '(4820, 3390)': 58, '(1919, 714)': 1, '(1920, 727)': 1, '(2592, 1944)': 116, '(1920, 365)': 1, '(2080, 800)': 124}
+  Image modes found: {'RGB': 2142, 'L': 2323}
+
+============================================================
+Dataset: grid
+  Total images: 399
+  Non-ASCII paths: 0
+  Corrupted files: 0
+  Zero-byte files: 0
+  Image sizes found: {'(1024, 1024)': 399}
+  Image modes found: {'L': 399}
+
+============================================================
+Dataset: hazelnut
+  Total images: 571
+  Non-ASCII paths: 0
+  Corrupted files: 0
+  Zero-byte files: 0
+  Image sizes found: {'(1024, 1024)': 571}
+  Image modes found: {'L': 70, 'RGB': 501}
+
+============================================================
+Dataset: leather
+  Total images: 461
+  Non-ASCII paths: 0
+  Corrupted files: 0
+  Zero-byte files: 0
+  Image sizes found: {'(1024, 1024)': 461}
+  Image modes found: {'L': 92, 'RGB': 369}
+
+============================================================
+Dataset: metal_nut
+  Total images: 428
+  Non-ASCII paths: 0
+  Corrupted files: 0
+  Zero-byte files: 0
+  Image sizes found: {'(700, 700)': 428}
+  Image modes found: {'L': 93, 'RGB': 335}
+
+============================================================
+Dataset: pill
+  Total images: 575
+  Non-ASCII paths: 0
+  Corrupted files: 0
+  Zero-byte files: 0
+  Image sizes found: {'(800, 800)': 575}
+  Image modes found: {'L': 141, 'RGB': 434}
+
+============================================================
+Dataset: screw
+  Total images: 599
+  Non-ASCII paths: 0
+  Corrupted files: 0
+  Zero-byte files: 0
+  Image sizes found: {'(1024, 1024)': 599}
+  Image modes found: {'L': 599}
+
+============================================================
+Dataset: SSGD
+  Total images: 2504
+  Non-ASCII paths: 0
+  Corrupted files: 0
+  Zero-byte files: 0
+  Image sizes found: {'(1500, 1000)': 2504}
+  Image modes found: {'RGB': 2504}
+
+============================================================
+Dataset: tile
+  Total images: 431
+  Non-ASCII paths: 0
+  Corrupted files: 0
+  Zero-byte files: 0
+  Image sizes found: {'(840, 840)': 431}
+  Image modes found: {'L': 84, 'RGB': 347}
+
+============================================================
+Dataset: toothbrush
+  Total images: 132
+  Non-ASCII paths: 0
+  Corrupted files: 0
+  Zero-byte files: 0
+  Image sizes found: {'(1024, 1024)': 132}
+  Image modes found: {'L': 30, 'RGB': 102}
+
+============================================================
+Dataset: transistor
+  Total images: 353
+  Non-ASCII paths: 0
+  Corrupted files: 0
+  Zero-byte files: 0
+  Image sizes found: {'(1024, 1024)': 353}
+  Image modes found: {'L': 40, 'RGB': 313}
+
+============================================================
+Dataset: wood
+  Total images: 386
+  Non-ASCII paths: 0
+  Corrupted files: 0
+  Zero-byte files: 0
+  Image sizes found: {'(1024, 1024)': 386}
+  Image modes found: {'L': 60, 'RGB': 326}
+
+============================================================
+Dataset: zipper
+  Total images: 510
+  Non-ASCII paths: 0
+  Corrupted files: 0
+  Zero-byte files: 0
+  Image sizes found: {'(1024, 1024)': 510}
+  Image modes found: {'L': 510}
