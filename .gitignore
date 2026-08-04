@@ -6,10 +6,14 @@ data/raw/*
 data/processed/
 data/synthetic/
 
-# outputs
+# outputs — large files go through DVC, not git
 outputs/checkpoints/
-outputs/figures/
-outputs/tables/
+outputs/heatmaps/
+outputs/logs/mlflow/
+
+# Keep results tables and figures in git (small, important)
+!outputs/tables/
+!outputs/figures/
 
 # python
 __pycache__/
