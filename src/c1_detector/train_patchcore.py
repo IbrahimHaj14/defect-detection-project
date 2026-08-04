@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import shutil
 import time
 from pathlib import Path
 
@@ -42,11 +43,11 @@ import mlflow.pytorch
 from anomalib.models import Patchcore
 from anomalib.engine import Engine
 
-# Adjust the import path based on how you invoke the script.
+# Adjust the import path.
 # If run via `python -m src.c1_detector.train_patchcore`, use relative import:
 #   from .datamodule import build_datamodule_from_manifest, summarise_datamodule
 # If run as a plain script, use the direct import below:
-from datamodule import build_datamodule_from_manifest, summarise_datamodule
+from .datamodule import build_datamodule_from_manifest, summarise_datamodule
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -207,6 +208,27 @@ def train_patchcore(
             logger.info(f"Checkpoint saved: {ckpt_path}")
         except Exception as e:
             logger.warning(f"Could not save checkpoint: {e}")
+
+        # ── Step 1: Export TorchScript (model.pt) for Deployment ────────────
+        try:
+            canonical_export_dir = CHECKPOINT_ROOT / dataset / category
+            canonical_export_dir.mkdir(parents=True, exist_ok=True)
+
+            # Search Anomalib's root directory for exported TorchScript model
+            anomalib_weights = list(checkpoint_dir.rglob("model.pt"))
+            if anomalib_weights:
+                src = anomalib_weights[0]
+                dest = canonical_export_dir / "model.pt"
+                if src != dest:
+                    shutil.copy2(src, dest)
+                logger.info(f"Model weights successfully exported to: {dest}")
+                mlflow.log_param("model_weights_path", str(dest))
+            else:
+                logger.warning("Torch model.pt not found in Anomalib output path.")
+        except Exception as e:
+            logger.warning(f"Could not export canonical model.pt: {e}")
+
+        # ───────────────────────────────────────────────────────────────────
 
         mlflow.log_metric("total_wall_time_seconds", train_time + test_time)
         logger.info(f"MLflow run ID: {run.info.run_id}")
