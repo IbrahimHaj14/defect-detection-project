@@ -1,0 +1,15 @@
+base_model_id: runwayml/stable-diffusion-inpainting
+resolution: 512
+scheduler: DDIM
+num_inference_steps: 50
+guidance_scale: 7.5
+dtype: bfloat16
+vae_decode_dtype: float32
+
+smoke_test:
+  seed: 42
+  prompt: a small manufacturing surface defect
+  input_gray_value: 128
+  mask_box: [192, 192, 320, 320]
+  unmasked_mad_tolerance: 0.1
+  black_mean_epsilon: 1.0e-6

@@ -1,0 +1,11 @@
+# Additive C2 dependencies. Torch is intentionally not listed or downgraded.
+diffusers==0.38.0
+transformers==5.8.1
+accelerate==1.13.0
+peft==0.19.1
+safetensors==0.8.0rc0
+torchmetrics==1.9.0
+lpips==0.1.4
+clean-fid==0.1.35
+PyYAML==6.0.3
+mlflow==3.12.0

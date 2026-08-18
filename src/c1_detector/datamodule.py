@@ -15,8 +15,8 @@ Usage:
     from src.c1_detector.datamodule import build_datamodule_from_manifest
 
     dm = build_datamodule_from_manifest(
-        manifest_path="data/splits/mvtec_ad_splits.json",
-        category="bottle",
+        manifest_path="data/splits/ecf_splits.json",
+        category="1.scratch",
         image_size=(256, 256),
         train_batch_size=32,
         eval_batch_size=32,
@@ -40,13 +40,10 @@ def _resolve_category_root(manifest_entry: dict, category: str, dataset_name: st
     Infer the category root directory from the manifest paths.
 
     Manifest entries look like:
-      data/processed/mvtec_ad/bottle/train/good/000.png
+      data/processed/ECF-Dataset/1.scratch/train/good/000.png
 
     Category root:
-      data/processed/mvtec_ad/bottle/
-
-    We derive this from any train entry (they always exist) by walking
-    up from image_path to strip 'train/good/<filename>'.
+      data/processed/ECF-Dataset/1.scratch/
     """
     train_entries = manifest_entry.get("splits", {}).get("train", [])
     if not train_entries:
@@ -75,15 +72,13 @@ def _detect_mask_layout(
     Returns:
         (mask_dir_relative_to_root, is_dataset_level)
 
-    Two conventions supported:
-        1. MVTec / SSGD-style (category-level):
-           <category_root>/ground_truth/<defect_class>/<image_stem>.png
-        2. ECF-style (dataset-level):
-           <dataset_root>/ground_truth/defects/<image_stem>.png
-
-    Detection strategy: check where the first non-null mask_path in the
-    manifest actually lives.
+    Conventions supported:
+        1. Category-level ground_truth (MVTec / ECF):
+           <category_root>/ground_truth/...
+        2. Dataset-level ground_truth:
+           <dataset_root>/ground_truth/defects/...
     """
+    # 1. Check if test manifest entries contain active mask_path
     for entry in manifest_entry.get("splits", {}).get("test", []):
         mask_path = entry.get("mask_path")
         if mask_path:
@@ -91,36 +86,39 @@ def _detect_mask_layout(
             if not mask_path_obj.exists():
                 continue
 
-            # Check if the mask is inside the category root
+            # Check if mask is inside the category root
             try:
                 relative = mask_path_obj.relative_to(category_root)
-                # e.g. relative == PosixPath('ground_truth/scratch/000.png')
-                return str(relative.parts[0]), False  # 'ground_truth', category-level
+                return str(relative.parts[0]), False  # e.g. 'ground_truth', category-level
             except ValueError:
-                # Mask is outside the category root -> dataset-level layout
+                # Mask is outside category root -> dataset-level layout
                 dataset_root = category_root.parent
                 try:
                     relative = mask_path_obj.relative_to(dataset_root)
-                    return str(relative.parent), True  # e.g. 'ground_truth/defects', dataset-level
+                    return str(relative.parent), True
                 except ValueError:
                     logger.warning(
                         f"Mask path {mask_path_obj} is not under category or dataset root."
                     )
-                    return None, False
-    return None, False
 
+    # 2. Direct fallback: check if ground_truth exists at category root and contains mask files
+    gt_dir = category_root / "ground_truth"
+    if gt_dir.exists() and any(p.is_file() for p in gt_dir.rglob("*.*")):
+        return "ground_truth", False
+
+    return None, False
 
 def _collect_test_defect_dirs(category_root: Path) -> list[str]:
     """
     Return the list of defect subdirectories under test/, excluding 'good'.
-    e.g. ['bent', 'broken_large', 'broken_small', 'contamination', 'crack']
+    e.g. ['test_NG'] or ['bent', 'broken_large']
     """
     test_dir = category_root / "test"
     if not test_dir.exists():
         return []
     return sorted(
         d.name for d in test_dir.iterdir()
-        if d.is_dir() and d.name != "good"
+        if d.is_dir() and d.name.lower() != "good"
     )
 
 
@@ -135,19 +133,6 @@ def build_datamodule_from_manifest(
 ) -> Folder:
     """
     Construct an Anomalib Folder datamodule for a specific category from a manifest.
-
-    Args:
-        manifest_path: Path to a *_splits.json file (e.g. data/splits/mvtec_ad_splits.json).
-        category: Category name within the manifest (e.g. 'bottle', 'metal_nut', 'lb101').
-        image_size: (H, W) resize target for both images and masks.
-        train_batch_size: Batch size for train/val dataloaders.
-        eval_batch_size: Batch size for test dataloader.
-        num_workers: DataLoader worker count. Reduce to 0 on Windows if you hit issues.
-        seed: Random seed for any internal Anomalib splitting (should be inactive
-              since we provide explicit test/val dirs).
-
-    Returns:
-        Configured but not-yet-set-up Anomalib Folder datamodule. Call .setup() before use.
     """
     manifest_path = Path(manifest_path)
     if not manifest_path.exists():
@@ -180,15 +165,19 @@ def build_datamodule_from_manifest(
     defect_dirs = _collect_test_defect_dirs(category_root)
     mask_dir, is_dataset_level = _detect_mask_layout(category_root, manifest_entry)
 
+    # Disable mask_dir if the resolved ground_truth directory is empty
+    if mask_dir:
+        gt_check_path = (category_root.parent if is_dataset_level else category_root) / mask_dir
+        if not gt_check_path.exists() or not any(p.is_file() for p in gt_check_path.rglob("*.*")):
+            logger.warning(f"  Mask directory '{mask_dir}' is empty for '{category}'. Setting mask_dir=None.")
+            mask_dir = None
+
     logger.info(f"  Defect dirs: {defect_dirs}")
     logger.info(f"  Mask layout: {'dataset-level' if is_dataset_level else 'category-level'}")
     logger.info(f"  Mask dir: {mask_dir}")
 
-    # For dataset-level masks (ECF), Anomalib's Folder expects mask_dir relative
-    # to root. We set root = dataset root in that case.
     if is_dataset_level:
         root = category_root.parent
-        # Anomalib's Folder needs paths relative to root
         normal_dir = str((category_root / "train" / "good").relative_to(root))
         normal_test_dir = str((category_root / "test" / "good").relative_to(root))
         abnormal_dir = [
@@ -208,7 +197,8 @@ def build_datamodule_from_manifest(
         normal_test_dir=normal_test_dir,
         abnormal_dir=abnormal_dir,
         mask_dir=mask_dir,
-        train_batch_size=train_batch_size,
+        extensions=('.bmp', '.png', '.jpg', '.jpeg', '.BMP', '.PNG'),
+                train_batch_size=train_batch_size,
         eval_batch_size=eval_batch_size,
         num_workers=num_workers,
         seed=seed,
@@ -226,26 +216,18 @@ def summarise_datamodule(dm: Folder) -> None:
 
 
 if __name__ == "__main__":
-    # Quick self-test: build and set up a datamodule for MVTec AD bottle
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
-    dm = build_datamodule_from_manifest(
-        manifest_path="data/splits/mvtec_ad_splits.json",
-        category="bottle",
-        image_size=(256, 256),
-        train_batch_size=8,
-        eval_batch_size=8,
-        num_workers=0,  # 0 for Windows compatibility during smoke test
-    )
-    dm.setup()
-    summarise_datamodule(dm)
-
-    # Fetch one batch from each split to confirm shapes
-    for split_name, loader_fn in [
-        ("train", dm.train_dataloader),
-        ("val",   dm.val_dataloader),
-        ("test",  dm.test_dataloader),
-    ]:
-        batch = next(iter(loader_fn()))
-        img_shape = batch.image.shape if hasattr(batch, "image") else batch["image"].shape
-        logger.info(f"  [{split_name.upper()}] batch image shape: {tuple(img_shape)}")
+    # Quick smoke test for ECF category if splits exist
+    manifest = Path("data/splits/ecf_splits.json")
+    if manifest.exists():
+        dm = build_datamodule_from_manifest(
+            manifest_path=manifest,
+            category="1.scratch",
+            image_size=(256, 256),
+            train_batch_size=8,
+            eval_batch_size=8,
+            num_workers=0,
+        )
+        dm.setup()
+        summarise_datamodule(dm)

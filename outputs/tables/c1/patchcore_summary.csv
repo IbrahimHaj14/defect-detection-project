@@ -1,0 +1,32 @@
+dataset,category,image_AUROC,image_F1Score,pixel_AUROC,pixel_F1Score
+MVTec AD,bottle,1.0000,N/A,0.9840,N/A
+MVTec AD,bottle,1.0000,N/A,0.9838,N/A
+MVTec AD,cable,0.9873,N/A,0.9860,N/A
+MVTec AD,capsule,0.9909,N/A,0.9911,N/A
+MVTec AD,carpet,0.9921,N/A,0.9896,N/A
+MVTec AD,grid,0.9812,N/A,0.9824,N/A
+MVTec AD,hazelnut,1.0000,N/A,0.9881,N/A
+MVTec AD,leather,1.0000,N/A,0.9917,N/A
+MVTec AD,metal_nut,0.9981,N/A,0.9842,N/A
+MVTec AD,pill,0.9697,N/A,0.9780,N/A
+MVTec AD,screw,0.9635,N/A,0.9831,N/A
+MVTec AD,tile,1.0000,N/A,0.9628,N/A
+MVTec AD,toothbrush,0.8889,N/A,0.9888,N/A
+MVTec AD,transistor,0.9950,N/A,0.9737,N/A
+MVTec AD,wood,0.9767,N/A,0.9537,N/A
+MVTec AD,zipper,0.9667,N/A,0.9815,N/A
+MVTec AD,MEAN,0.9819,N/A,0.9814,N/A
+,,,,,
+ECF,1.scratch,0.9764,0.9630,0.9538,0.4380
+ECF,2.Indentation,0.8273,0.9733,0.8724,0.4300
+ECF,3.blade mark,0.9816,0.9918,0.8263,0.0792
+ECF,4.dirt,0.9973,0.9913,0.8928,0.0424
+ECF,5.particle,0.9169,0.9834,0.6676,0.0004
+ECF,b2b_flex_pcb,1.0000,1.0000,0.9813,0.6870
+ECF,contamination,1.0000,0.9643,0.9465,0.6297
+ECF,ic_flex_pcb,1.0000,0.9412,0.9852,0.7713
+ECF,ir_base,1.0000,0.9600,0.9542,0.5698
+ECF,metal_foreign_body,1.0000,0.9677,0.9013,0.2607
+ECF,missing_plate,1.0000,1.0000,0.7936,0.3812
+ECF,solder_bead,1.0000,0.9565,N/A,N/A
+ECF,MEAN,0.9750,0.9744,0.8886,0.3900

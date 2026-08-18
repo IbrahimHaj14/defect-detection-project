@@ -2,7 +2,7 @@
   "bottle": {
     "dataset_name": "mvtec_ad",
     "category": "bottle",
-    "created_at": "2026-08-04T15:30:11Z",
+    "created_at": "2026-08-10T16:17:30Z",
     "seed": 42,
     "split_strategy": "val_normals_only",
     "val_fraction": 0.1,
@@ -1799,7 +1799,7 @@
   "cable": {
     "dataset_name": "mvtec_ad",
     "category": "cable",
-    "created_at": "2026-08-04T15:30:11Z",
+    "created_at": "2026-08-10T16:17:31Z",
     "seed": 42,
     "split_strategy": "val_normals_only",
     "val_fraction": 0.1,
@@ -4093,7 +4093,7 @@
   "capsule": {
     "dataset_name": "mvtec_ad",
     "category": "capsule",
-    "created_at": "2026-08-04T15:30:12Z",
+    "created_at": "2026-08-10T16:17:31Z",
     "seed": 42,
     "split_strategy": "val_normals_only",
     "val_fraction": 0.1,
@@ -6246,7 +6246,7 @@
   "carpet": {
     "dataset_name": "mvtec_ad",
     "category": "carpet",
-    "created_at": "2026-08-04T15:30:12Z",
+    "created_at": "2026-08-10T16:17:31Z",
     "seed": 42,
     "split_strategy": "val_normals_only",
     "val_fraction": 0.1,
@@ -8675,7 +8675,7 @@
   "grid": {
     "dataset_name": "mvtec_ad",
     "category": "grid",
-    "created_at": "2026-08-04T15:30:12Z",
+    "created_at": "2026-08-10T16:17:31Z",
     "seed": 42,
     "split_strategy": "val_normals_only",
     "val_fraction": 0.1,
@@ -10774,7 +10774,7 @@
   "hazelnut": {
     "dataset_name": "mvtec_ad",
     "category": "hazelnut",
-    "created_at": "2026-08-04T15:30:12Z",
+    "created_at": "2026-08-10T16:17:31Z",
     "seed": 42,
     "split_strategy": "val_normals_only",
     "val_fraction": 0.1,
@@ -13826,7 +13826,7 @@
   "leather": {
     "dataset_name": "mvtec_ad",
     "category": "leather",
-    "created_at": "2026-08-04T15:30:12Z",
+    "created_at": "2026-08-10T16:17:31Z",
     "seed": 42,
     "split_strategy": "val_normals_only",
     "val_fraction": 0.1,
@@ -16087,7 +16087,7 @@
   "metal_nut": {
     "dataset_name": "mvtec_ad",
     "category": "metal_nut",
-    "created_at": "2026-08-04T15:30:12Z",
+    "created_at": "2026-08-10T16:17:31Z",
     "seed": 42,
     "split_strategy": "val_normals_only",
     "val_fraction": 0.1,
@@ -18143,7 +18143,7 @@
   "pill": {
     "dataset_name": "mvtec_ad",
     "category": "pill",
-    "created_at": "2026-08-04T15:30:12Z",
+    "created_at": "2026-08-10T16:17:31Z",
     "seed": 42,
     "split_strategy": "val_normals_only",
     "val_fraction": 0.1,
@@ -20796,7 +20796,7 @@
   "screw": {
     "dataset_name": "mvtec_ad",
     "category": "screw",
-    "created_at": "2026-08-04T15:30:12Z",
+    "created_at": "2026-08-10T16:17:31Z",
     "seed": 42,
     "split_strategy": "val_normals_only",
     "val_fraction": 0.1,
@@ -23723,7 +23723,7 @@
   "tile": {
     "dataset_name": "mvtec_ad",
     "category": "tile",
-    "created_at": "2026-08-04T15:30:12Z",
+    "created_at": "2026-08-10T16:17:31Z",
     "seed": 42,
     "split_strategy": "val_normals_only",
     "val_fraction": 0.1,
@@ -25852,7 +25852,7 @@
   "toothbrush": {
     "dataset_name": "mvtec_ad",
     "category": "toothbrush",
-    "created_at": "2026-08-04T15:30:12Z",
+    "created_at": "2026-08-10T16:17:31Z",
     "seed": 42,
     "split_strategy": "val_normals_only",
     "val_fraction": 0.1,
@@ -26507,7 +26507,7 @@
   "transistor": {
     "dataset_name": "mvtec_ad",
     "category": "transistor",
-    "created_at": "2026-08-04T15:30:12Z",
+    "created_at": "2026-08-10T16:17:31Z",
     "seed": 42,
     "split_strategy": "val_normals_only",
     "val_fraction": 0.1,
@@ -28431,7 +28431,7 @@
   "wood": {
     "dataset_name": "mvtec_ad",
     "category": "wood",
-    "created_at": "2026-08-04T15:30:12Z",
+    "created_at": "2026-08-10T16:17:31Z",
     "seed": 42,
     "split_strategy": "val_normals_only",
     "val_fraction": 0.1,
@@ -30434,7 +30434,7 @@
   "zipper": {
     "dataset_name": "mvtec_ad",
     "category": "zipper",
-    "created_at": "2026-08-04T15:30:12Z",
+    "created_at": "2026-08-10T16:17:31Z",
     "seed": 42,
     "split_strategy": "val_normals_only",
     "val_fraction": 0.1,
