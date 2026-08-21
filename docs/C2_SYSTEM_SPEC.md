@@ -100,7 +100,7 @@ defect-detection-project/
 │   └── verify_phase_6.py
 │
 ├── data/
-│   ├── processed/{mvtec_ad,ecf}/...  # EXISTING C1 output (read-only)
+│   ├── processed/<configured-directory>/...  # EXISTING C1 output (read-only)
 │   └── splits/{mvtec_ad,ecf}_splits.json  # EXISTING (read-only)
 │
 └── outputs/
@@ -156,10 +156,11 @@ Each manifest maps `category -> {stats, splits:{train,val,test:[{image_path,labe
 | Excluded classes | none | `pseudo_broken_solder` (0 anomalous test imgs) |
 
 ### 3.4 Crop definition (ECF patch-based)
-- Crop size: 256×256, centred on the defect mask centroid.
-- If the defect bounding box exceeds 256, fall back to the tightest square that contains it, then resize to 256.
-- If the defect sits near an image edge, clamp the crop window inside the image and record the offset in metadata so the composite can place it back exactly.
-- The crop's local mask is the corresponding region of the full mask.
+- If the defect bounding box is at most 256×256, take a 256×256 crop centred on the defect-mask centroid and clamp the crop window inside the image.
+- If either bounding-box dimension exceeds 256 but its tightest containing square fits inside the full frame, take that square and resize it to 256×256 for generation. Record the original full-frame placement in `crop_bbox = [x, y, width, height]` and retain `crop_offset = [x, y]`.
+- After generation, resize the 256×256 generated crop and its mask back to `crop_bbox` before compositing. The slight blur introduced by this upscaling is an accepted limitation.
+- If an oversized defect's tightest containing square cannot fit inside the full frame, drop that defect with a logged warning. Record these drops as a per-class crop-exclusion count; Phase 4 reports that count in the fidelity table.
+- The crop's local mask is the corresponding region of the full mask and is always resized with nearest-neighbour interpolation.
 
 ### 3.5 Output contract (what C2 produces for downstream)
 Each synthetic sample is a triple written atomically:
@@ -177,7 +178,8 @@ outputs/synthetic/{dataset}/{class}/meta/{uid}.json    # provenance
   "source_clean_image": "path",
   "source_mask": "path",
   "generation_mode": "whole | patch",
-  "crop_offset": [x, y] ,
+  "crop_offset": [x, y],
+  "crop_bbox": [x, y, width, height],
   "lora_checkpoint": "path",
   "token": "<class-token>",
   "seed": 0,
@@ -187,6 +189,8 @@ outputs/synthetic/{dataset}/{class}/meta/{uid}.json    # provenance
   "lfs_passed": true
 }
 ```
+
+For a standard ECF crop, `crop_bbox = [x, y, 256, 256]`. For a resized oversized crop, it records the original containing square on the full frame. Whole-image generation uses `[0, 0]` for `crop_offset` and the full image extent for `crop_bbox`.
 
 ---
 

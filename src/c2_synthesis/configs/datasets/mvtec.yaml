@@ -1,0 +1,27 @@
+dataset_key: mvtec_ad
+processed_dir: data/processed/mvtec_ad
+splits_path: data/splits/mvtec_ad_splits.json
+generation_mode: whole
+crop_size: null
+selection_seed: 42
+budgets: [5, 10, 20, all]
+
+classes:
+  - bottle
+  - cable
+  - capsule
+  - carpet
+  - grid
+  - hazelnut
+  - leather
+  - metal_nut
+  - pill
+  - screw
+  - tile
+  - toothbrush
+  - transistor
+  - wood
+  - zipper
+
+excluded_classes: []
+eligible_class_count: 15

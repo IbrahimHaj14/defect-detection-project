@@ -1,0 +1,39 @@
+base_model_id: runwayml/stable-diffusion-inpainting
+dataset_key: mvtec_ad
+class_name: bottle
+pair_budget: 5
+resolution: 512
+
+learned_token: <mvtec-bottle-defect>
+defect_prompt_template: "a photo of {token}"
+object_prompt_template: "a {object} with {token}"
+
+rank: 16
+lora_alpha: 16
+target_modules:
+  - to_q
+  - to_k
+  - to_v
+  - to_out.0
+
+learning_rate: 1.0e-4
+max_steps: 1000
+smoke_steps: 50
+max_projected_pilot_minutes: 120
+batch_size: 1
+gradient_accumulation: 1
+
+lambda_obj: 1.0
+lambda_attn: 0.1
+object_background_alpha: 0.1
+object_mask_min_bbox_area_scale: 1.2
+object_mask_max_bbox_area_scale: 4.0
+
+# Masked textual inversion from arXiv:2604.22850 (defect-only token gradient).
+# Disabled for the Phase 2/3 baseline and independently ablatable in Phase 6.
+enable_masked_ti: false
+
+seed: 42
+num_workers: 0
+dtype: bfloat16
+checkpoint_root: outputs/checkpoints/c2

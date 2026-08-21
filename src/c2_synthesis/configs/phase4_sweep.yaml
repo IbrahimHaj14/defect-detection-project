@@ -1,0 +1,42 @@
+datasets:
+  - mvtec_ad
+  - ecf
+
+pair_budget: 20
+training_steps: 3000
+smoke_steps: 50
+candidate_count_per_class: 30
+target_accepted_per_class: null
+lfs_percentile: 25.0
+min_lfs_acceptance_rate: 0.30
+max_lfs_acceptance_rate: 0.90
+seed: 42
+
+checkpoint_root: outputs/checkpoints/c2/phase4_bigthree
+synthetic_root: outputs/synthetic/phase4_bigthree
+report_path: outputs/tables/c2/fidelity.csv
+runtime_config_root: outputs/logs/c2/phase4_bigthree_configs
+base_config_path: src/c2_synthesis/configs/phase4_bigthree_inference.yaml
+reuse_existing_checkpoints: false
+
+# NPI masked textual inversion (arXiv:2604.22850), independently ablatable.
+enable_masked_ti: true
+
+# Projection gate is based on the approved ECF scratch Big Three calibration.
+calibration_training_minutes_per_class: 18.75
+calibration_generation_minutes_per_class: 1.8
+max_projected_sweep_hours: 12.0
+expected_class_count: 26
+
+mvtec_token_template: "<mvtec-{class_slug}-defect>"
+ecf_token_template: "<ecf-{class_slug}>"
+defect_prompt_template: "a photo of {token}"
+mvtec_object_prompt_template: "a {object} with {token}"
+ecf_object_prompt_template: "a metal surface with {token}"
+
+metric_device: cuda
+metric_batch_size: 16
+kid_num_subsets: 100
+kid_max_subset_size: 1000
+lpips_resolution: 256
+lpips_batch_size: 16

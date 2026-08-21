@@ -1,0 +1,35 @@
+dataset_key: ecf
+processed_dir: data/processed/ECF-Dataset
+splits_path: data/splits/ecf_splits.json
+generation_mode: patch
+crop_size: 256
+selection_seed: 42
+budgets: [5, 10, 20, all]
+
+classes:
+  - 1.scratch
+  - 2.Indentation
+  - 3.blade mark
+  - 4.dirt
+  - 5.particle
+  - b2b_flex_pcb
+  - contamination
+  - ic_flex_pcb
+  - ir_base
+  - metal_foreign_body
+  - missing_plate
+  - pseudo_broken_solder
+  - Serious defect
+  - solder_bead
+
+excluded_classes:
+  - pseudo_broken_solder  # 0 anomalous test images
+  - Serious defect        # empty category
+  - solder_bead           # anomalous images have no masks
+
+# C2 retains 11 ECF classes after applying the exclusions above.
+eligible_class_count: 11
+
+crop_policy:
+  oversized_in_frame: resize_containing_square
+  oversized_square_out_of_frame: drop

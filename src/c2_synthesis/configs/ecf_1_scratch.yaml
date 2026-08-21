@@ -1,0 +1,35 @@
+base_model_id: runwayml/stable-diffusion-inpainting
+dataset_key: ecf
+class_name: 1.scratch
+pair_budget: 5
+resolution: 256
+
+learned_token: <ecf-scratch>
+defect_prompt_template: "a photo of {token}"
+object_prompt_template: "a metal surface with {token}"
+
+rank: 16
+lora_alpha: 16
+target_modules:
+  - to_q
+  - to_k
+  - to_v
+  - to_out.0
+
+learning_rate: 1.0e-4
+max_steps: 1000
+smoke_steps: 50
+max_projected_pilot_minutes: 120
+batch_size: 1
+gradient_accumulation: 1
+
+lambda_obj: 1.0
+lambda_attn: 0.1
+object_background_alpha: 0.1
+object_mask_min_bbox_area_scale: 1.2
+object_mask_max_bbox_area_scale: 4.0
+
+seed: 42
+num_workers: 0
+dtype: bfloat16
+checkpoint_root: outputs/checkpoints/c2

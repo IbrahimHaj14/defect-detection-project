@@ -4,17 +4,15 @@ scheduler: DDIM
 num_inference_steps: 50
 guidance_scale: 7.5
 
-# Dynamic CFG from arXiv:2604.22850; fixed CFG remains the baseline default.
-enable_dynamic_cfg: false
+# NPI dynamic CFG schedule (arXiv:2604.22850).
+enable_dynamic_cfg: true
 guidance_schedule:
   start: 3.0
   end: 8.0
   mode: linear
 
-# Inference-only canvas expansion motivated by the mask-grounded synthesis in
-# MAGIC (arXiv:2507.02314) and GroundingAnomaly (arXiv:2604.08301).
-# Zero disables dilation; the stored label always remains the original mask.
-mask_dilation_px: 0
+# Inference-only conditioning canvas; output labels remain non-dilated.
+mask_dilation_px: 12
 
 dtype: bfloat16
 vae_decode_dtype: float32

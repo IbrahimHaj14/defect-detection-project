@@ -68,20 +68,20 @@
 - `tests/verify_phase_1.py`
 
 **Detailed Instructions & Logic:**
-1. Dataset YAMLs declare: manifest path, class list, excluded classes (ECF: `pseudo_broken_solder`), generation mode (`whole` for MVTec, `patch` for ECF), crop size (256 for ECF).
+1. Dataset YAMLs declare: logical dataset key, processed-data path, manifest path, class list, excluded classes (ECF: `pseudo_broken_solder`, `Serious defect`, and `solder_bead`), generation mode (`whole` for MVTec, `patch` for ECF), and crop size (256 for ECF). Physical dataset paths are read only from these YAMLs.
 2. `pair_builder.py`:
    - `build_pairs(dataset, category, budget)` reads the C1 split manifest (read-only), returns lists of `(image_path, mask_path)` for real defects and a separate list of clean `train/good` image paths.
    - Budget selection is **deterministic** (seeded shuffle then take first N) so {5,10,20} are nested subsets of `all`.
    - Validates every pair: image exists, mask exists, mask is non-empty (contains defect pixels), dimensions match.
 3. `patch_extractor.py`:
-   - `extract_defect_crop(image, mask, size=256)` returns a crop centred on the mask centroid, with edge clamping, plus the `crop_offset` for later compositing (per spec §3.4).
-   - `composite_crop_back(full_clean, gen_crop, crop_offset, crop_mask)` places a generated crop back into a full clean frame using the pixel-composite equation.
+   - `extract_defect_crop(image, mask, size=256)` returns a crop centred on the mask centroid, with edge clamping, plus `crop_offset` and `crop_bbox` for later compositing (per spec §3.4).
+   - `composite_crop_back(full_clean, gen_crop, crop_offset, crop_mask, crop_bbox)` resizes an oversized crop back to `crop_bbox` when required, then places it into a full clean frame using the pixel-composite equation.
 
 **Integration requirements:** Read `data/splits/*_splits.json` exactly as C1 wrote them. Never modify them. Never re-derive splits. Use `utils/image_io` for all I/O.
 
 **Edge Case & Windows Protections:**
 - Empty or all-zero masks → skip with a logged warning, do not crash.
-- ECF categories where a defect bbox > 256 → fall back to tightest containing square then resize, and record it.
+- ECF defects where a bbox exceeds 256 → use the tightest containing square and resize when that square fits in-frame. If it cannot fit, drop the sample with a logged warning and increment the class's crop-exclusion count.
 - POSIX paths throughout for cross-platform manifest portability.
 
 **Verification Script & Acceptance Test:** `tests/verify_phase_1.py`
@@ -125,7 +125,7 @@
 **Integration requirements:** Consumes Phase 1 pairs. Uses `mlflow_utils` and `seed`. Writes to the spec's checkpoint path.
 
 **Edge Case & Windows Protections:**
-- Before the full pilot run, execute a **timed 20-step smoke test** and print steps/sec + projected full-run time (C1 Dinomaly lesson). Abort with a clear message if throughput implies an implausibly long run.
+- Before the full pilot run, execute a **timed 50-step smoke test** on five MVTec `bottle` pairs and print steps/sec + projected 1000-step time (C1 Dinomaly lesson). Abort with a clear message if the projection exceeds the config-exposed `max_projected_pilot_minutes` threshold (default: 120 minutes).
 - Guard the attention-map hook against shape mismatches (log and skip attention loss for that step rather than crash).
 - bf16 forward/backward; keep loss computation in fp32 for numerical stability.
 
@@ -198,12 +198,13 @@
 2. `sweep_generate_all.py`: iterate classes, generate + LFS-filter a target count (e.g. 200 accepted) per class, write triples.
 3. `fid_kid.py`: wrap `clean-fid`/`torchmetrics` for FID and KID between real defects and synthetic defects per class. **KID is the primary fidelity metric** (small-sample robustness, spec §5.1).
 4. `lpips_diversity.py`: mean pairwise LPIPS among a class's synthetic samples (mode-collapse guard).
-5. `report.py`: assemble `outputs/tables/c2/fidelity.csv` with columns `dataset,class,n_real,n_synth,FID,KID,LPIPS_diversity,lfs_acceptance`.
+5. `report.py`: assemble `outputs/tables/c2/fidelity.csv` with columns `dataset,class,n_real,n_synth,crop_exclusion_count,FID,KID,LPIPS_diversity,lfs_acceptance`.
 
 **Integration requirements:** Reuses Phases 2–3. All metrics logged to MLflow and written to the git-tracked CSV.
 
 **Edge Case & Windows Protections:**
 - Classes with very few real defects (ECF `missing_plate`, `metal_foreign_body`) → still run, flag low-n in the CSV, interpret KID cautiously.
+- Report each ECF class's Phase 1 crop-exclusion count so the dropped out-of-frame-square limitation remains visible.
 - `num_workers=0` for any batching in metric computation.
 - DVC-add checkpoints + synthetic after the sweep.
 
