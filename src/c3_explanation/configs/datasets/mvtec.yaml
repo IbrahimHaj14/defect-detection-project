@@ -1,0 +1,415 @@
+dataset_key: mvtec_ad
+processed_dir: data/processed/mvtec_ad
+splits_path: data/splits/mvtec_ad_splits.json
+output_dir: outputs/corpus/c3/mvtec_ad
+report_schema_path: src/c3_explanation/configs/report_schema.yaml
+seed: 42
+train_fraction: 0.8
+test_fraction: 0.2
+enrichment:
+  enabled: false
+excluded_classes: []
+
+report_templates:
+  severity_rationale_template: "The {defect_type} affects {affected_area_pct:.2f}% of the image and is assigned {severity_level} severity by the configured area thresholds."
+  confidence_template: "Confidence is limited by the accuracy of the supplied defect evidence. Spatial and severity fields are deterministically grounded from that evidence, while descriptive and recommendation language requires human verification."
+
+# Phase 2 intentionally supervises only the conservative `inspect` action.
+# The available labels and masks do not establish an authorised policy for
+# rework, scrap, or monitor decisions.
+classes:
+  bottle:
+    defect_types:
+      broken_large:
+        description_template: "A large broken region is identified on the bottle in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected bottle area to verify the extent of the large break and determine disposition under the applicable quality procedure."
+      broken_small:
+        description_template: "A small broken region is identified on the bottle in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected bottle area to verify the small break and determine whether it affects product acceptance."
+      contamination:
+        description_template: "A contamination region is identified on the bottle in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected bottle area to confirm the contamination and determine the appropriate controlled response."
+  cable:
+    defect_types:
+      bent_wire:
+        description_template: "A bent-wire condition is identified on the cable in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected wire to verify its condition and determine whether cable function or assembly is affected."
+      cable_swap:
+        description_template: "A cable-swap condition is identified in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the cable arrangement against the approved assembly specification before deciding corrective action."
+      combined:
+        description_template: "A class-labelled combined cable defect is identified in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected cable region to establish which combined conditions are present and determine disposition."
+      cut_inner_insulation:
+        description_template: "A cut-inner-insulation condition is identified on the cable in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the inner insulation damage to determine its extent and whether electrical integrity may be affected."
+      cut_outer_insulation:
+        description_template: "A cut-outer-insulation condition is identified on the cable in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the outer insulation damage to determine its extent and the required controlled response."
+      missing_cable:
+        description_template: "A missing-cable condition is identified in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the assembly against the approved cable configuration and determine the appropriate disposition."
+      missing_wire:
+        description_template: "A missing-wire condition is identified in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the cable against the approved wire configuration and determine whether correction is permitted."
+      poke_insulation:
+        description_template: "A poke-type insulation defect is identified in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected insulation to verify the damage and determine whether cable integrity is compromised."
+  capsule:
+    defect_types:
+      crack:
+        description_template: "A crack is identified on the capsule in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the capsule crack to verify its extent and determine disposition under the applicable quality procedure."
+      faulty_imprint:
+        description_template: "A faulty-imprint condition is identified on the capsule in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the capsule imprint against the approved marking specification before deciding disposition."
+      poke:
+        description_template: "A poke-type defect is identified on the capsule in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected capsule surface to verify the defect and determine whether integrity is affected."
+      scratch:
+        description_template: "A scratch is identified on the capsule in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the scratched capsule area to verify its extent and determine whether acceptance criteria are met."
+      squeeze:
+        description_template: "A squeeze-related deformation is identified on the capsule in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the capsule deformation to determine whether its form or integrity is affected."
+  carpet:
+    defect_types:
+      color:
+        description_template: "A colour anomaly is identified on the carpet in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected carpet area against the approved colour standard before deciding disposition."
+      cut:
+        description_template: "A cut is identified on the carpet in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the carpet cut to verify its extent and determine whether the material meets acceptance criteria."
+      hole:
+        description_template: "A hole is identified in the carpet in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected carpet area to verify the hole and determine disposition."
+      metal_contamination:
+        description_template: "A metal-contamination region is identified on the carpet in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected area to confirm the foreign material and determine the appropriate controlled response."
+      thread:
+        description_template: "A thread-related anomaly is identified on the carpet in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected thread structure to determine whether the carpet meets the approved specification."
+  grid:
+    defect_types:
+      bent:
+        description_template: "A bent region is identified on the grid in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the grid deformation to determine whether geometry or function is affected."
+      broken:
+        description_template: "A broken region is identified on the grid in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the damaged grid region to verify its extent and determine disposition."
+      glue:
+        description_template: "A glue-related anomaly is identified on the grid in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected grid area against the approved bonding and cleanliness requirements."
+      metal_contamination:
+        description_template: "A metal-contamination region is identified on the grid in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected area to confirm the foreign material and determine the appropriate controlled response."
+      thread:
+        description_template: "A thread-like anomaly is identified on the grid in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected grid area to verify the anomaly and determine whether acceptance criteria are met."
+  hazelnut:
+    defect_types:
+      crack:
+        description_template: "A crack is identified on the hazelnut in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the crack to verify its extent and determine product disposition."
+      cut:
+        description_template: "A cut is identified on the hazelnut in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the cut region to verify its extent and determine whether acceptance criteria are met."
+      hole:
+        description_template: "A hole is identified on the hazelnut in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected area to verify the hole and determine product disposition."
+      print:
+        description_template: "A print-related anomaly is identified on the hazelnut in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the marked area against the approved product appearance requirements."
+  leather:
+    defect_types:
+      color:
+        description_template: "A colour anomaly is identified on the leather in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected leather area against the approved colour standard before deciding disposition."
+      cut:
+        description_template: "A cut is identified on the leather in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the leather cut to verify its extent and determine whether the material meets acceptance criteria."
+      fold:
+        description_template: "A fold-related anomaly is identified on the leather in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected leather area to determine whether the fold is permissible under the product specification."
+      glue:
+        description_template: "A glue-related anomaly is identified on the leather in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected area against the approved bonding and surface-finish requirements."
+      poke:
+        description_template: "A poke-type defect is identified on the leather in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected leather surface to verify the defect and determine disposition."
+  metal_nut:
+    defect_types:
+      bent:
+        description_template: "A bent condition is identified on the metal nut in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the component geometry to determine whether fit or function may be affected."
+      color:
+        description_template: "A colour anomaly is identified on the metal nut in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected surface against the approved appearance and material requirements."
+      flip:
+        description_template: "A flipped-orientation condition is identified for the metal nut in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the component orientation against the approved assembly configuration before deciding corrective action."
+      scratch:
+        description_template: "A scratch is identified on the metal nut in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the scratched surface to verify its extent and determine whether fit, function, or finish is affected."
+  pill:
+    defect_types:
+      color:
+        description_template: "A colour anomaly is identified on the pill in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the pill against the approved colour specification and determine disposition."
+      combined:
+        description_template: "A class-labelled combined pill defect is identified in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected pill region to establish the combined conditions and determine disposition."
+      contamination:
+        description_template: "A contamination region is identified on the pill in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected pill area to confirm the contamination and determine disposition under the applicable quality procedure."
+      crack:
+        description_template: "A crack is identified on the pill in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the pill crack to verify its extent and determine disposition under the applicable quality procedure."
+      faulty_imprint:
+        description_template: "A faulty-imprint condition is identified on the pill in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the imprint against the approved marking specification before deciding disposition."
+      pill_type:
+        description_template: "A pill-type anomaly is identified in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Verify the pill identity against the approved product specification before determining disposition."
+      scratch:
+        description_template: "A scratch is identified on the pill in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the scratched pill area to verify its extent and determine whether acceptance criteria are met."
+  screw:
+    defect_types:
+      manipulated_front:
+        description_template: "A manipulated-front condition is identified on the screw in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the screw front geometry against the approved component specification before deciding disposition."
+      scratch_head:
+        description_template: "A scratch is identified on the screw head in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the screw head to verify the scratch and determine whether fit, function, or finish is affected."
+      scratch_neck:
+        description_template: "A scratch is identified on the screw neck in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the screw neck to verify the scratch and determine whether component integrity is affected."
+      thread_side:
+        description_template: "A side-thread anomaly is identified on the screw in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected thread surface against the approved thread specification before deciding disposition."
+      thread_top:
+        description_template: "A top-thread anomaly is identified on the screw in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected thread region against the approved thread specification before deciding disposition."
+  tile:
+    defect_types:
+      crack:
+        description_template: "A crack is identified on the tile in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the tile crack to verify its extent and determine whether the tile meets acceptance criteria."
+      glue_strip:
+        description_template: "A glue-strip anomaly is identified on the tile in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected tile area against the approved surface and bonding requirements."
+      gray_stroke:
+        description_template: "A grey-stroke anomaly is identified on the tile in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the marked tile area against the approved appearance standard before deciding disposition."
+      oil:
+        description_template: "An oil-related region is identified on the tile in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected tile area to confirm the condition and determine the approved response."
+      rough:
+        description_template: "A rough-surface condition is identified on the tile in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected surface against the approved finish requirements before deciding disposition."
+  toothbrush:
+    defect_types:
+      defective:
+        description_template: "A class-labelled defective condition is identified on the toothbrush in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected toothbrush region against the approved product specification to determine the specific defect and disposition."
+  transistor:
+    defect_types:
+      bent_lead:
+        description_template: "A bent-lead condition is identified on the transistor in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected lead to determine whether component geometry or assembly suitability is affected."
+      cut_lead:
+        description_template: "A cut-lead condition is identified on the transistor in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected lead to verify the damage and determine component disposition."
+      damaged_case:
+        description_template: "A damaged-case condition is identified on the transistor in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the transistor case to verify the damage and determine whether component integrity is affected."
+      misplaced:
+        description_template: "A misplacement condition is identified for the transistor in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect component placement against the approved assembly specification before deciding corrective action."
+  wood:
+    defect_types:
+      color:
+        description_template: "A colour anomaly is identified on the wood surface in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected wood area against the approved appearance standard before deciding disposition."
+      combined:
+        description_template: "A class-labelled combined wood defect is identified in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected wood region to establish the combined conditions and determine disposition."
+      hole:
+        description_template: "A hole is identified in the wood surface in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected area to verify the hole and determine whether the material meets acceptance criteria."
+      liquid:
+        description_template: "A liquid-related region is identified on the wood surface in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected wood area to confirm the condition and determine the approved response."
+      scratch:
+        description_template: "A scratch is identified on the wood surface in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the scratched wood area to verify its extent and determine whether finish requirements are met."
+  zipper:
+    defect_types:
+      broken_teeth:
+        description_template: "Broken teeth are identified on the zipper in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected zipper teeth to determine whether operation or integrity is affected."
+      combined:
+        description_template: "A class-labelled combined zipper defect is identified in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected zipper region to establish the combined conditions and determine disposition."
+      fabric_border:
+        description_template: "A fabric-border anomaly is identified on the zipper in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the zipper border against the approved fabric and assembly requirements."
+      fabric_interior:
+        description_template: "A fabric-interior anomaly is identified on the zipper in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the interior fabric region against the approved material and assembly requirements."
+      rough:
+        description_template: "A rough-condition region is identified on the zipper in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected zipper area against the approved surface and operating requirements."
+      split_teeth:
+        description_template: "Split teeth are identified on the zipper in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected zipper teeth to determine whether operation or integrity is affected."
+      squeezed_teeth:
+        description_template: "Squeezed teeth are identified on the zipper in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected zipper teeth to determine whether geometry or operation is affected."

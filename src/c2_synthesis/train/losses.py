@@ -94,30 +94,45 @@ def attention_loss(attn_map_token: Tensor, mask_latent: Tensor) -> Tensor:
 def total_c2_loss(
     noise: Tensor,
     defect_noise_pred: Tensor,
-    object_noise_pred: Tensor,
+    object_noise_pred: Tensor | None,
     defect_mask_latent: Tensor,
-    object_mask_latent: Tensor,
+    object_mask_latent: Tensor | None,
     attn_map_token: Tensor,
     *,
     alpha: float,
     lambda_obj: float,
     lambda_attn: float,
 ) -> C2Losses:
-    r"""Implement System Spec section 4.4.
+    r"""Implement System Spec section 4.4 with a geometric fallback.
 
     .. math:: L_{C2}=L_{def}+\lambda_{obj}L_{obj}+\lambda_{attn}L_{attn}
+
+    If both object-branch inputs are ``None``, the defect is too large to
+    admit a valid 1.2x--4.0x containing rectangle. In that case no object
+    forward pass is required and the objective is formed directly as
+    :math:`L_{def}+\lambda_{attn}L_{attn}`. The returned zero object value is
+    reporting-only and is not multiplied into the backward graph.
     """
 
     if float(lambda_obj) < 0.0 or float(lambda_attn) < 0.0:
         raise ValueError("loss weights must be non-negative")
+    if (object_noise_pred is None) != (object_mask_latent is None):
+        raise ValueError(
+            "object_noise_pred and object_mask_latent must both be tensors or both be None"
+        )
     loss_defect = defect_loss(noise, defect_noise_pred, defect_mask_latent)
-    loss_object = object_loss(noise, object_noise_pred, object_mask_latent, alpha)
     loss_attention = attention_loss(attn_map_token, defect_mask_latent)
-    loss_total = (
-        loss_defect
-        + float(lambda_obj) * loss_object
-        + float(lambda_attn) * loss_attention
-    )
+    if object_noise_pred is None:
+        loss_object = loss_defect.new_zeros(())
+        loss_total = loss_defect + float(lambda_attn) * loss_attention
+    else:
+        assert object_mask_latent is not None
+        loss_object = object_loss(noise, object_noise_pred, object_mask_latent, alpha)
+        loss_total = (
+            loss_defect
+            + float(lambda_obj) * loss_object
+            + float(lambda_attn) * loss_attention
+        )
     return C2Losses(
         total=loss_total,
         defect=loss_defect,

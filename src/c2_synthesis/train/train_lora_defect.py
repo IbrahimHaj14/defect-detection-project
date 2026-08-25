@@ -52,6 +52,7 @@ class TrainingResult:
     projected_1000_seconds: float
     elapsed_seconds: float
     peak_vram_gib: float
+    object_mask_fallback_count: int
 
 
 def _repo_path(path_value: str | Path) -> Path:
@@ -134,12 +135,14 @@ def make_object_rectangle_mask(
     min_bbox_area_scale: float,
     max_bbox_area_scale: float,
     rng: random.Random,
-) -> np.ndarray:
-    """Sample an in-frame rectangle covering the defect under area bounds.
+) -> np.ndarray | None:
+    """Sample an in-frame rectangle, or signal impossible geometry with ``None``.
 
     The rectangle always contains the full defect bounding box. Its integer
     area is at least ``min_bbox_area_scale`` and at most
-    ``max_bbox_area_scale`` times the bounding-box area.
+    ``max_bbox_area_scale`` times the bounding-box area. If the frame cannot
+    contain even the configured minimum area, ``None`` tells the caller to
+    retain the sample while skipping its object-loss branch.
     """
 
     binary = np.asarray(defect_mask) > 0
@@ -171,6 +174,8 @@ def make_object_rectangle_mask(
             candidates.append((rectangle_width, minimum_height, maximum_height))
     if not candidates:
         feasible_scale = (width * height) / bbox_area
+        if feasible_scale < float(min_bbox_area_scale):
+            return None
         raise ValueError(
             "No in-frame rectangular mask satisfies the configured area bounds; "
             f"maximum feasible area scale is {feasible_scale:.3f}"
@@ -247,7 +252,7 @@ def _prepare_latent_examples(
     config: Mapping[str, Any],
     device: torch.device,
     dtype: torch.dtype,
-) -> list[dict[str, Tensor]]:
+) -> tuple[list[dict[str, Tensor]], int]:
     resolution = int(config["resolution"])
     dataset_config = load_dataset_config(str(config["dataset_key"]))
     generation_mode = str(dataset_config["generation_mode"])
@@ -256,6 +261,7 @@ def _prepare_latent_examples(
     rng = random.Random(int(config["seed"]))
     noise_generator = torch.Generator(device=device).manual_seed(int(config["seed"]))
     examples: list[dict[str, Tensor]] = []
+    object_mask_fallback_count = 0
     num_train_timesteps = int(pipe.scheduler.config.num_train_timesteps)
 
     pipe.vae.eval()
@@ -278,24 +284,30 @@ def _prepare_latent_examples(
                 ),
                 rng=rng,
             )
+            use_object_loss = object_mask_array is not None
+            if not use_object_loss:
+                object_mask_fallback_count += 1
+                logger.warning(
+                    "Object-loss geometry fallback: dataset=%s class=%s image=%s; "
+                    "no containing rectangle meets the %.3fx--%.3fx bbox-area bounds. "
+                    "The sample remains in training with defect and attention losses only.",
+                    config["dataset_key"],
+                    config["class_name"],
+                    image_path,
+                    float(config["object_mask_min_bbox_area_scale"]),
+                    float(config["object_mask_max_bbox_area_scale"]),
+                )
             pixels = pixels_cpu.unsqueeze(0).to(device=device, dtype=dtype)
             defect_mask = torch.from_numpy(defect_mask_array).unsqueeze(0).unsqueeze(0)
-            object_mask = torch.from_numpy(object_mask_array).unsqueeze(0).unsqueeze(0)
             defect_mask = defect_mask.to(device=device, dtype=dtype)
-            object_mask = object_mask.to(device=device, dtype=dtype)
 
             target_latent = _encode_vae_latents(pipe.vae, pixels)
             defect_masked_latent = _encode_vae_latents(
                 pipe.vae,
                 pixels * (1.0 - defect_mask),
             )
-            object_masked_latent = _encode_vae_latents(
-                pipe.vae,
-                pixels * (1.0 - object_mask),
-            )
             latent_size = tuple(int(value) for value in target_latent.shape[-2:])
             defect_mask_latent = _latent_mask(defect_mask, latent_size)
-            object_mask_latent = _latent_mask(object_mask, latent_size)
             noise = torch.randn(
                 target_latent.shape,
                 generator=noise_generator,
@@ -311,18 +323,30 @@ def _prepare_latent_examples(
                 dtype=torch.int64,
             )
 
-            examples.append(
-                {
-                    "target_latent": target_latent.squeeze(0).cpu(),
-                    "defect_masked_latent": defect_masked_latent.squeeze(0).cpu(),
-                    "object_masked_latent": object_masked_latent.squeeze(0).cpu(),
-                    "defect_mask_latent": defect_mask_latent.squeeze(0).cpu(),
-                    "object_mask_latent": object_mask_latent.squeeze(0).cpu(),
-                    "noise": noise.squeeze(0).cpu(),
-                    "timestep": timestep.squeeze(0).cpu(),
-                }
-            )
-    return examples
+            example = {
+                "target_latent": target_latent.squeeze(0).cpu(),
+                "defect_masked_latent": defect_masked_latent.squeeze(0).cpu(),
+                "defect_mask_latent": defect_mask_latent.squeeze(0).cpu(),
+                "noise": noise.squeeze(0).cpu(),
+                "timestep": timestep.squeeze(0).cpu(),
+                "use_object_loss": torch.tensor(use_object_loss, dtype=torch.bool),
+            }
+            if object_mask_array is not None:
+                object_mask = torch.from_numpy(object_mask_array).unsqueeze(0).unsqueeze(0)
+                object_mask = object_mask.to(device=device, dtype=dtype)
+                object_masked_latent = _encode_vae_latents(
+                    pipe.vae,
+                    pixels * (1.0 - object_mask),
+                )
+                object_mask_latent = _latent_mask(object_mask, latent_size)
+                example.update(
+                    {
+                        "object_masked_latent": object_masked_latent.squeeze(0).cpu(),
+                        "object_mask_latent": object_mask_latent.squeeze(0).cpu(),
+                    }
+                )
+            examples.append(example)
+    return examples, object_mask_fallback_count
 
 
 def _expand_cross_attention_targets(
@@ -470,7 +494,12 @@ def _move_batch(
 ) -> dict[str, Tensor]:
     moved: dict[str, Tensor] = {}
     for key, value in batch.items():
-        target_dtype = torch.int64 if key == "timestep" else dtype
+        if key == "timestep":
+            target_dtype = torch.int64
+        elif key == "use_object_loss":
+            target_dtype = torch.bool
+        else:
+            target_dtype = dtype
         moved[key] = value.to(device=device, dtype=target_dtype, non_blocking=False)
     return moved
 
@@ -609,7 +638,9 @@ def train_lora_defect(
     pipe.unet.requires_grad_(False).to(device=device, dtype=dtype)
     pipe.text_encoder.requires_grad_(False).to(device=device, dtype=torch.float32)
 
-    examples = _prepare_latent_examples(pipe, pairs, config, device, dtype)
+    examples, object_mask_fallback_count = _prepare_latent_examples(
+        pipe, pairs, config, device, dtype
+    )
     loader = DataLoader(
         examples,
         batch_size=int(config["batch_size"]),
@@ -677,6 +708,7 @@ def train_lora_defect(
         "class": config["class_name"],
         "pair_budget": config["pair_budget"],
         "enable_masked_ti": config["enable_masked_ti"],
+        "object_mask_fallback_count": object_mask_fallback_count,
         "lora_checkpoint": lora_path,
         "token_checkpoint": token_path,
     }
@@ -687,14 +719,19 @@ def train_lora_defect(
     def execute_steps() -> None:
         for step_index, raw_batch in zip(range(training_steps), _cycle(loader), strict=False):
             batch = _move_batch(raw_batch, device, dtype)
+            use_object_loss = bool(batch["use_object_loss"].item())
             optimizer.zero_grad(set_to_none=True)
             defect_hidden, token_positions = token_manager.encode_prompt(
                 defect_prompt,
                 device=device,
             )
-            object_hidden, _ = token_manager.encode_prompt(object_prompt, device=device)
             defect_hidden = defect_hidden.to(dtype=dtype)
-            object_hidden = object_hidden.to(dtype=dtype)
+            object_hidden = None
+            if use_object_loss:
+                object_hidden, _ = token_manager.encode_prompt(
+                    object_prompt, device=device
+                )
+                object_hidden = object_hidden.to(dtype=dtype)
             noisy_latents = pipe.scheduler.add_noise(
                 batch["target_latent"],
                 batch["noise"],
@@ -719,21 +756,23 @@ def train_lora_defect(
                 )[0]
             attention_map = attention_collector.end()
 
-            with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
-                object_input = torch.cat(
-                    [
-                        noisy_latents,
-                        batch["object_mask_latent"],
-                        batch["object_masked_latent"],
-                    ],
-                    dim=1,
-                )
-                object_prediction = pipe.unet(
-                    object_input,
-                    batch["timestep"],
-                    encoder_hidden_states=object_hidden,
-                    return_dict=False,
-                )[0]
+            object_prediction = None
+            if use_object_loss:
+                with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+                    object_input = torch.cat(
+                        [
+                            noisy_latents,
+                            batch["object_mask_latent"],
+                            batch["object_masked_latent"],
+                        ],
+                        dim=1,
+                    )
+                    object_prediction = pipe.unet(
+                        object_input,
+                        batch["timestep"],
+                        encoder_hidden_states=object_hidden,
+                        return_dict=False,
+                    )[0]
 
             if attention_map is None:
                 logger.warning(
@@ -743,15 +782,22 @@ def train_lora_defect(
                 loss_defect = defect_loss(
                     batch["noise"], defect_prediction, batch["defect_mask_latent"]
                 )
-                loss_object = object_loss(
-                    batch["noise"],
-                    object_prediction,
-                    batch["object_mask_latent"],
-                    float(config["object_background_alpha"]),
-                )
+                if object_prediction is None:
+                    loss_object = loss_defect.new_zeros(())
+                    loss_total = loss_defect
+                else:
+                    loss_object = object_loss(
+                        batch["noise"],
+                        object_prediction,
+                        batch["object_mask_latent"],
+                        float(config["object_background_alpha"]),
+                    )
+                    loss_total = (
+                        loss_defect + float(config["lambda_obj"]) * loss_object
+                    )
                 zero_attention = loss_defect.new_zeros(())
                 losses = C2Losses(
-                    total=loss_defect + float(config["lambda_obj"]) * loss_object,
+                    total=loss_total,
                     defect=loss_defect,
                     object=loss_object,
                     attention=zero_attention,
@@ -762,7 +808,7 @@ def train_lora_defect(
                     defect_prediction,
                     object_prediction,
                     batch["defect_mask_latent"],
-                    batch["object_mask_latent"],
+                    batch.get("object_mask_latent"),
                     attention_map,
                     alpha=float(config["object_background_alpha"]),
                     lambda_obj=float(config["lambda_obj"]),
@@ -799,6 +845,9 @@ def train_lora_defect(
             run_name = f"{config['class_name']}-r{config['rank']}-{training_steps}steps"
             with start_c2_run(experiment, run_name, run_params):
                 execute_steps()
+                mlflow.log_metric(
+                    "object_mask_fallback_count", object_mask_fallback_count
+                )
         else:
             execute_steps()
 
@@ -825,6 +874,12 @@ def train_lora_defect(
 
         _save_lora(pipe.unet, lora_path)
         token_manager.save(token_path)
+        logger.info(
+            "Object-loss geometry fallbacks for dataset=%s class=%s: %d samples",
+            config["dataset_key"],
+            config["class_name"],
+            object_mask_fallback_count,
+        )
         peak_vram_gib = torch.cuda.max_memory_allocated(device) / (1024**3)
         return TrainingResult(
             history=tuple(history),
@@ -834,6 +889,7 @@ def train_lora_defect(
             projected_1000_seconds=projected_seconds,
             elapsed_seconds=elapsed_seconds,
             peak_vram_gib=peak_vram_gib,
+            object_mask_fallback_count=object_mask_fallback_count,
         )
     finally:
         attention_collector.close()

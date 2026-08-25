@@ -1,0 +1,271 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: c3-report-schema-v1
+title: C3 defect report
+description: Schema shared by C3 corpus construction, generation, and evaluation.
+type: object
+additionalProperties: false
+required:
+  - defect_present
+  - defect_type
+  - location
+  - severity
+  - description
+  - recommended_action
+  - confidence
+properties:
+  defect_present:
+    type: boolean
+  defect_type:
+    type: string
+    enum:
+      - bent
+      - bent_lead
+      - bent_wire
+      - broken
+      - broken_large
+      - broken_small
+      - broken_teeth
+      - cable_swap
+      - color
+      - combined
+      - contamination
+      - crack
+      - cut
+      - cut_inner_insulation
+      - cut_lead
+      - cut_outer_insulation
+      - damaged_case
+      - defective
+      - fabric_border
+      - fabric_interior
+      - faulty_imprint
+      - flip
+      - fold
+      - glue
+      - glue_strip
+      - gray_stroke
+      - hole
+      - liquid
+      - manipulated_front
+      - metal_contamination
+      - misplaced
+      - missing_cable
+      - missing_wire
+      - oil
+      - pill_type
+      - poke
+      - poke_insulation
+      - print
+      - rough
+      - scratch
+      - scratch_head
+      - scratch_neck
+      - split_teeth
+      - squeeze
+      - squeezed_teeth
+      - thread
+      - thread_side
+      - thread_top
+      - 1.scratch
+      - 2.Indentation
+      - 3.blade mark
+      - 4.dirt
+      - 5.particle
+      - b2b_flex_pcb
+      - ic_flex_pcb
+      - ir_base
+      - metal_foreign_body
+      - missing_plate
+  location:
+    type: object
+    additionalProperties: false
+    required: [region, bounding_box, centroid]
+    properties:
+      region:
+        oneOf:
+          - type: string
+            enum:
+              - upper-left quadrant
+              - top edge
+              - upper-right quadrant
+              - left edge
+              - centre
+              - right edge
+              - lower-left quadrant
+              - bottom edge
+              - lower-right quadrant
+          - type: 'null'
+      bounding_box:
+        oneOf:
+          - type: array
+            prefixItems:
+              - {type: integer, minimum: 0}
+              - {type: integer, minimum: 0}
+              - {type: integer, minimum: 1}
+              - {type: integer, minimum: 1}
+            minItems: 4
+            maxItems: 4
+          - type: 'null'
+      centroid:
+        oneOf:
+          - type: array
+            prefixItems:
+              - {type: number, minimum: 0}
+              - {type: number, minimum: 0}
+            minItems: 2
+            maxItems: 2
+          - type: 'null'
+  severity:
+    type: object
+    additionalProperties: false
+    required: [level, affected_area_pct, rationale]
+    properties:
+      level:
+        type: string
+        enum: [none, minor, moderate, severe]
+      affected_area_pct:
+        type: number
+        minimum: 0
+        maximum: 100
+      rationale:
+        type: string
+  description:
+    type: string
+  recommended_action:
+    type: object
+    additionalProperties: false
+    required: [action, reason]
+    properties:
+      action:
+        type: string
+        enum: [inspect, rework, scrap, monitor]
+      reason:
+        type: string
+  confidence:
+    type: string
+allOf:
+  - if:
+      properties:
+        defect_present: {const: false}
+      required: [defect_present]
+    then:
+      properties:
+        location:
+          properties:
+            region: {type: 'null'}
+            bounding_box: {type: 'null'}
+            centroid: {type: 'null'}
+        severity:
+          properties:
+            level: {const: none}
+            affected_area_pct: {const: 0.0}
+    else:
+      properties:
+        location:
+          properties:
+            region: {type: string}
+            bounding_box: {type: array}
+            centroid: {type: array}
+        severity:
+          properties:
+            level: {enum: [minor, moderate, severe]}
+
+# First-pass values pending inspection of actual area distributions. ECF
+# micro-defects may cluster below 1% and require recalibration.
+severity_thresholds:
+  global:
+    minor_upper_exclusive: 1.0
+    moderate_upper_exclusive: 5.0
+  # Each entry may override either or both global cutoffs without code changes.
+  per_defect_type: {}
+
+# Dataset-specific source-label vocabularies. The JSON Schema above uses their
+# union because the report itself deliberately has no dataset field. Phase 2
+# construction and Phase 4 generation must also enforce the applicable list.
+allowed_enumerations:
+  defect_type:
+    mvtec_ad:
+      - bent
+      - bent_lead
+      - bent_wire
+      - broken
+      - broken_large
+      - broken_small
+      - broken_teeth
+      - cable_swap
+      - color
+      - combined
+      - contamination
+      - crack
+      - cut
+      - cut_inner_insulation
+      - cut_lead
+      - cut_outer_insulation
+      - damaged_case
+      - defective
+      - fabric_border
+      - fabric_interior
+      - faulty_imprint
+      - flip
+      - fold
+      - glue
+      - glue_strip
+      - gray_stroke
+      - hole
+      - liquid
+      - manipulated_front
+      - metal_contamination
+      - misplaced
+      - missing_cable
+      - missing_wire
+      - oil
+      - pill_type
+      - poke
+      - poke_insulation
+      - print
+      - rough
+      - scratch
+      - scratch_head
+      - scratch_neck
+      - split_teeth
+      - squeeze
+      - squeezed_teeth
+      - thread
+      - thread_side
+      - thread_top
+    ecf:
+      - 1.scratch
+      - 2.Indentation
+      - 3.blade mark
+      - 4.dirt
+      - 5.particle
+      - b2b_flex_pcb
+      - contamination
+      - ic_flex_pcb
+      - ir_base
+      - metal_foreign_body
+      - missing_plate
+  recommended_action: [inspect, rework, scrap, monitor]
+  severity_level: [none, minor, moderate, severe]
+
+# Inference-time defect_type is Brain-owned and constrained to the vocabulary;
+# during corpus construction the Bridge supplies the known manifest label.
+field_ownership:
+  defect_present: bridge
+  defect_type:
+    corpus: bridge
+    inference: brain
+  location.region: bridge
+  location.bounding_box: bridge
+  location.centroid: bridge
+  severity.level: bridge
+  severity.affected_area_pct: bridge
+  severity.rationale: brain
+  description: brain
+  recommended_action.action: brain
+  recommended_action.reason: brain
+  confidence: brain
+
+# Phase 1 uses action="inspect" only as an internal schema-valid skeleton
+# placeholder. It is not inferred by the Bridge and must be populated/replaced
+# during Phase 2 corpus construction and Phase 4 final generation.

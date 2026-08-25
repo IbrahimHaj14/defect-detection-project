@@ -17,7 +17,8 @@ synthetic_root: outputs/synthetic/phase4_bigthree
 report_path: outputs/tables/c2/fidelity.csv
 runtime_config_root: outputs/logs/c2/phase4_bigthree_configs
 base_config_path: src/c2_synthesis/configs/phase4_bigthree_inference.yaml
-reuse_existing_checkpoints: false
+reuse_existing_checkpoints: true
+summary_path: outputs/logs/c2/phase4_summary.txt
 
 # NPI masked textual inversion (arXiv:2604.22850), independently ablatable.
 enable_masked_ti: true
@@ -25,8 +26,19 @@ enable_masked_ti: true
 # Projection gate is based on the approved ECF scratch Big Three calibration.
 calibration_training_minutes_per_class: 18.75
 calibration_generation_minutes_per_class: 1.8
+# Measured on the approved 50-step wood resume gate (25 August 2026).
+resume_training_minutes_per_class: 18.839
 max_projected_sweep_hours: 12.0
 expected_class_count: 26
+
+# Phase 4 summary flags. KID uses the standard two-sided Tukey fence.
+kid_outlier_iqr_multiplier: 1.5
+
+# System Spec section 6.3: large binary artifacts are DVC-tracked.
+enable_dvc_finalize: true
+dvc_targets:
+  - outputs/checkpoints
+  - outputs/synthetic
 
 mvtec_token_template: "<mvtec-{class_slug}-defect>"
 ecf_token_template: "<ecf-{class_slug}>"

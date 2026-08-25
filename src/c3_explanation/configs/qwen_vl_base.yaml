@@ -1,0 +1,23 @@
+model_id: Qwen/Qwen2.5-VL-7B-Instruct
+quantization: nf4
+compute_dtype: bfloat16
+device_map: auto
+attention_implementation: sdpa
+local_cache_dir: outputs/cache/c3/huggingface
+local_files_only: false
+trust_remote_code: false
+seed: 42
+
+# Kept deliberately small so Phase 0 can coexist with an active C2 GPU job.
+generation:
+  max_new_tokens: 8
+  temperature: 0.0
+  do_sample: false
+
+# Windows-safe load order. INT8 still uses bitsandbytes; bf16 3B does not.
+fallback:
+  quantization_fallback:
+    - nf4
+    - int8
+    - bf16
+  model_id_fallback: Qwen/Qwen2.5-VL-3B-Instruct

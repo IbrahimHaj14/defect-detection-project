@@ -29,10 +29,6 @@ from src.c2_synthesis.train.sweep_train_all import (
     select_production_pairs,
     write_runtime_training_config,
 )
-from src.c2_synthesis.train.train_lora_defect import (
-    DEFAULT_CONFIG_PATH as DEFAULT_TRAIN_CONFIG_PATH,
-    load_training_config,
-)
 from src.c2_synthesis.utils.image_io import load_image_rgb, load_mask_binary
 from src.c2_synthesis.utils.logging_utils import get_logger
 from src.c2_synthesis.utils.mlflow_utils import start_c2_run
@@ -180,7 +176,6 @@ def generate_sweep(
     )
 
     records: list[SweepGenerationRecord] = []
-    base_training_config = load_training_config(DEFAULT_TRAIN_CONFIG_PATH)
     for dataset in selected_datasets:
         eligible = get_eligible_classes(dataset)
         requested = list(
@@ -196,8 +191,6 @@ def generate_sweep(
                 dataset,
                 class_name,
                 effective_budget,
-                seed=int(sweep_config["seed"]),
-                base_training_config=base_training_config,
             )
             actual_budget = len(pairs)
             runtime_path = write_runtime_training_config(

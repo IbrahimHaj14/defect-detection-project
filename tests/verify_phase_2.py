@@ -94,6 +94,7 @@ def _verify_object_mask_bounds(config: dict[str, object]) -> None:
         max_bbox_area_scale=float(config["object_mask_max_bbox_area_scale"]),
         rng=random.Random(int(config["seed"])),
     )
+    assert object_mask is not None, "Normal defect unexpectedly triggered fallback"
     bbox_area = 10 * 20
     area_scale = float(object_mask.sum()) / bbox_area
     assert area_scale >= float(config["object_mask_min_bbox_area_scale"])
@@ -101,6 +102,43 @@ def _verify_object_mask_bounds(config: dict[str, object]) -> None:
     assert np.all(object_mask[defect_mask > 0] == 1), (
         "Object rectangle does not contain the full defect bbox"
     )
+
+
+def _verify_object_mask_geometry_fallback(config: dict[str, object]) -> None:
+    """A full-frame defect retains defect/attention gradients without L_obj."""
+
+    full_frame_mask = np.ones((64, 64), dtype=np.uint8)
+    object_mask = make_object_rectangle_mask(
+        full_frame_mask,
+        min_bbox_area_scale=float(config["object_mask_min_bbox_area_scale"]),
+        max_bbox_area_scale=float(config["object_mask_max_bbox_area_scale"]),
+        rng=random.Random(int(config["seed"])),
+    )
+    assert object_mask is None, "Full-frame geometry must return the fallback signal"
+
+    noise = torch.ones(1, 4, 8, 8, dtype=torch.float32)
+    defect_prediction = torch.zeros_like(noise, requires_grad=True)
+    defect_mask = torch.ones(1, 1, 8, 8, dtype=torch.float32)
+    attention_map = torch.zeros_like(defect_mask, requires_grad=True)
+    losses = total_c2_loss(
+        noise,
+        defect_prediction,
+        None,
+        defect_mask,
+        None,
+        attention_map,
+        alpha=0.1,
+        lambda_obj=1.0,
+        lambda_attn=0.1,
+    )
+    expected = defect_loss(noise, defect_prediction, defect_mask) + 0.1 * attention_loss(
+        attention_map, defect_mask
+    )
+    assert losses.object.item() == 0.0
+    assert torch.isclose(losses.total, expected)
+    losses.total.backward()
+    assert defect_prediction.grad is not None
+    assert attention_map.grad is not None
 
 
 def _reload_artifacts(
@@ -175,6 +213,7 @@ def main() -> None:
 
     _verify_loss_equations()
     _verify_object_mask_bounds(config)
+    _verify_object_mask_geometry_fallback(config)
 
     verify_config_path, verify_config = _isolated_verify_config(config)
 

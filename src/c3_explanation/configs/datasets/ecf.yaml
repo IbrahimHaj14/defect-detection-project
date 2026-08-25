@@ -1,0 +1,100 @@
+dataset_key: ecf
+processed_dir: data/processed/ECF-Dataset
+splits_path: data/splits/ecf_splits.json
+output_dir: outputs/corpus/c3/ecf
+report_schema_path: src/c3_explanation/configs/report_schema.yaml
+seed: 42
+train_fraction: 0.8
+test_fraction: 0.2
+enrichment:
+  enabled: false
+excluded_classes:
+  - pseudo_broken_solder  # No anomalous entries.
+  - Serious defect        # Empty category.
+  - solder_bead           # Anomalous entries have no usable masks.
+
+report_templates:
+  severity_rationale_template: "The {defect_type} affects {affected_area_pct:.2f}% of the image and is assigned {severity_level} severity by the configured area thresholds."
+  confidence_template: "Confidence is limited by the accuracy of the supplied defect evidence. Spatial and severity fields are deterministically grounded from that evidence, while descriptive and recommendation language requires human verification."
+
+# Phase 2 intentionally supervises only the conservative `inspect` action.
+# The available labels and masks do not establish an authorised policy for
+# rework, scrap, or monitor decisions.
+classes:
+  1.scratch:
+    defect_types:
+      1.scratch:
+        description_template: "A scratch is identified in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected area to verify the scratch extent and determine whether the component meets the applicable acceptance criteria."
+  2.Indentation:
+    defect_types:
+      2.Indentation:
+        description_template: "An indentation is identified in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected area to verify the indentation and determine whether component form or function is affected."
+  3.blade mark:
+    defect_types:
+      3.blade mark:
+        description_template: "A blade-mark condition is identified in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected area to verify the blade mark and determine whether the component meets the applicable acceptance criteria."
+  4.dirt:
+    defect_types:
+      4.dirt:
+        description_template: "A dirt-related region is identified in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected area to confirm the condition and determine the appropriate controlled response."
+  5.particle:
+    defect_types:
+      5.particle:
+        description_template: "A particle-related region is identified in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected area to confirm the foreign material and determine the appropriate controlled response."
+  b2b_flex_pcb:
+    defect_types:
+      b2b_flex_pcb:
+        description_template: "A class-labelled B2B flex-PCB anomaly is identified in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected B2B flex-PCB region against the approved component and assembly requirements."
+  contamination:
+    defect_types:
+      contamination:
+        description_template: "A contamination region is identified in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected area to confirm the contamination and determine the appropriate controlled response."
+  ic_flex_pcb:
+    defect_types:
+      ic_flex_pcb:
+        description_template: "A class-labelled IC flex-PCB anomaly is identified in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected IC flex-PCB region against the approved component and assembly requirements."
+  ir_base:
+    defect_types:
+      ir_base:
+        description_template: "A class-labelled IR-base anomaly is identified in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected IR-base region against the approved component specification before deciding disposition."
+  metal_foreign_body:
+    defect_types:
+      metal_foreign_body:
+        description_template: "A metal-foreign-body region is identified in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the affected area to confirm the foreign material and determine the appropriate controlled response."
+  missing_plate:
+    defect_types:
+      missing_plate:
+        description_template: "A missing-plate condition is identified in the {region}, affecting {affected_area_pct:.2f}% of the image."
+        action_template:
+          action: inspect
+          reason_template: "Inspect the assembly against the approved plate configuration and determine the appropriate disposition."

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import argparse
 import gc
-import random
 import re
 import time
 from dataclasses import dataclass
@@ -24,7 +23,6 @@ from src.c2_synthesis.data.patch_extractor import extract_defect_crop
 from src.c2_synthesis.train.train_lora_defect import (
     DEFAULT_CONFIG_PATH as DEFAULT_TRAIN_CONFIG_PATH,
     load_training_config,
-    make_object_rectangle_mask,
     train_lora_defect,
 )
 from src.c2_synthesis.utils.image_io import load_image_rgb, load_mask_binary
@@ -49,6 +47,8 @@ class SweepTrainingRecord:
     elapsed_seconds: float
     peak_vram_gib: float
     reused: bool
+    pairs_used: int
+    object_mask_fallback_count: int
 
 
 def _repo_path(path_value: str | Path) -> Path:
@@ -91,11 +91,16 @@ def load_sweep_config(
         "runtime_config_root",
         "base_config_path",
         "reuse_existing_checkpoints",
+        "summary_path",
         "enable_masked_ti",
         "calibration_training_minutes_per_class",
         "calibration_generation_minutes_per_class",
+        "resume_training_minutes_per_class",
         "max_projected_sweep_hours",
         "expected_class_count",
+        "kid_outlier_iqr_multiplier",
+        "enable_dvc_finalize",
+        "dvc_targets",
         "mvtec_token_template",
         "ecf_token_template",
         "defect_prompt_template",
@@ -138,6 +143,19 @@ def load_sweep_config(
             )
     if not isinstance(config["enable_masked_ti"], bool):
         raise ValueError("enable_masked_ti must be a boolean")
+    if not isinstance(config["enable_dvc_finalize"], bool):
+        raise ValueError("enable_dvc_finalize must be a boolean")
+    if not config["dvc_targets"]:
+        raise ValueError("dvc_targets must contain at least one path")
+    for key in (
+        "calibration_training_minutes_per_class",
+        "calibration_generation_minutes_per_class",
+        "resume_training_minutes_per_class",
+        "max_projected_sweep_hours",
+        "kid_outlier_iqr_multiplier",
+    ):
+        if float(config[key]) <= 0.0:
+            raise ValueError(f"{key} must be positive")
     if int(config["training_steps"]) < int(config["smoke_steps"]):
         raise ValueError("training_steps must be at least smoke_steps")
     minimum = float(config["min_lfs_acceptance_rate"])
@@ -153,25 +171,17 @@ def select_production_pairs(
     dataset: str,
     class_name: str,
     pair_budget: int,
-    *,
-    seed: int,
-    base_training_config: Mapping[str, Any] | None = None,
 ) -> list[tuple[str, str]]:
     """Select the first deterministic pairs satisfying all training contracts.
 
     Whole-frame MVTec pairs require no additional filtering. ECF pairs are
-    dropped if the approved 256 crop cannot be formed or if no object rectangle
-    can meet the configured 1.2x--4x bbox-area bounds. Every drop is logged and
-    the scan continues until the configured production budget is filled.
+    dropped only if the approved 256 crop cannot be formed. A crop that cannot
+    admit the configured object rectangle remains eligible and uses the
+    object-loss fallback during training.
     """
 
     if pair_budget <= 0:
         raise ValueError("pair_budget must be positive")
-    training_config = dict(
-        load_training_config(DEFAULT_TRAIN_CONFIG_PATH)
-        if base_training_config is None
-        else base_training_config
-    )
     dataset_config = load_dataset_config(dataset)
     all_pairs, _clean_paths = build_pairs(dataset, class_name, "all")
     if str(dataset_config["generation_mode"]) == "whole":
@@ -179,7 +189,6 @@ def select_production_pairs(
     else:
         crop_size = int(dataset_config["crop_size"])
         selected: list[tuple[str, str]] = []
-        eligibility_rng = random.Random(int(seed))
         for image_path, mask_path in all_pairs:
             crop = extract_defect_crop(
                 load_image_rgb(_repo_path(image_path)),
@@ -192,27 +201,6 @@ def select_production_pairs(
                     dataset,
                     class_name,
                     mask_path,
-                )
-                continue
-            try:
-                make_object_rectangle_mask(
-                    crop.mask,
-                    min_bbox_area_scale=float(
-                        training_config["object_mask_min_bbox_area_scale"]
-                    ),
-                    max_bbox_area_scale=float(
-                        training_config["object_mask_max_bbox_area_scale"]
-                    ),
-                    rng=eligibility_rng,
-                )
-            except ValueError as error:
-                logger.warning(
-                    "Phase 4 pair drop for %s/%s: object mask is ineligible "
-                    "(%s; %s)",
-                    dataset,
-                    class_name,
-                    mask_path,
-                    error,
                 )
                 continue
             selected.append((image_path, mask_path))
@@ -329,7 +317,6 @@ def train_sweep(
     if effective_budget <= 0 or effective_smoke <= 0 or effective_steps < effective_smoke:
         raise ValueError("Sweep pair/step overrides are invalid")
 
-    base_training_config = load_training_config(DEFAULT_TRAIN_CONFIG_PATH)
     records: list[SweepTrainingRecord] = []
     smoke_complete = False
     for dataset in selected_datasets:
@@ -348,8 +335,6 @@ def train_sweep(
                 dataset,
                 class_name,
                 effective_budget,
-                seed=int(sweep_config["seed"]),
-                base_training_config=base_training_config,
             )
             actual_budget = len(pairs)
             runtime_path = write_runtime_training_config(
@@ -378,6 +363,8 @@ def train_sweep(
                         elapsed_seconds=0.0,
                         peak_vram_gib=0.0,
                         reused=True,
+                        pairs_used=actual_budget,
+                        object_mask_fallback_count=0,
                     )
                 )
                 continue
@@ -422,6 +409,8 @@ def train_sweep(
                 elapsed_seconds=elapsed,
                 peak_vram_gib=result.peak_vram_gib,
                 reused=False,
+                pairs_used=actual_budget,
+                object_mask_fallback_count=result.object_mask_fallback_count,
             )
             records.append(record)
             if log_to_mlflow:
@@ -441,11 +430,15 @@ def train_sweep(
                             "class_wall_time_seconds": elapsed,
                             "peak_vram_gib": result.peak_vram_gib,
                             "steps_per_second": result.steps_per_second,
+                            "object_mask_fallback_count": (
+                                result.object_mask_fallback_count
+                            ),
                         }
                     )
             print(
                 f"Phase 4 training {dataset}/{class_name}: "
-                f"wall={elapsed:.2f}s, peak_vram={result.peak_vram_gib:.3f} GiB"
+                f"wall={elapsed:.2f}s, peak_vram={result.peak_vram_gib:.3f} GiB, "
+                f"object_fallbacks={result.object_mask_fallback_count}"
             )
             _release_cuda()
     return tuple(records)
